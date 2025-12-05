@@ -146,7 +146,7 @@ void visualizar_caminho_minimo(Grafo& g, PyObject* pModule, int origem, int dest
         dados_visualizacao.push_back({u, v, w, cor});
     }
 
-    chamar_plotar_arestas(pModule, n, dados_visualizacao, direcionado); // false = não direcionado (exemplo)
+    chamar_plotar_arestas(pModule, n, dados_visualizacao, direcionado);
 }
 
 void visualizar_arvore_geradora(Grafo& g, PyObject* pModule, bool direcionado) {
