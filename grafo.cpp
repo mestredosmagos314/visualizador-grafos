@@ -109,7 +109,7 @@ pair<int,vector<pair<int,int>>> Grafo::encontrar_caminho_minimo(int inicio, int 
         caminho.push_back(prev[caminho.back()]);
     }
     reverse(caminho.begin(), caminho.end());
-    for(int i = 1; i < caminho.size(); i++){
+    for(int i = 1; i < (int)caminho.size(); i++){
         arestas_caminho_minimo.emplace_back(caminho[i-1], caminho[i]);
     }
     return make_pair(distancia[fim], arestas_caminho_minimo);

@@ -4,10 +4,10 @@ LDFLAGS =
 
 TARGET = run_grafo
 
-SRCS = main.cpp grafo.cpp unionFind.cpp
+SRCS = main.cpp grafo.cpp unionFind.cpp ponte.cpp
 OBJS = $(SRCS:.cpp=.o)
 
-HEADERS = grafo.h unionFind.h
+HEADERS = grafo.h unionFind.h ponte.h
 
 # ==========================================
 # Configuracao Automatica do Python

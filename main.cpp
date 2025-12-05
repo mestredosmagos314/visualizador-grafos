@@ -4,10 +4,11 @@
 #include <random>
 #include <ctime>
 #include <map>
-#include "grafo.h"
-#include <Python.h>
 #include <string>
 #include <set>
+
+#include "grafo.h"
+#include "ponte.h"
 
 using namespace std;
 
@@ -90,117 +91,24 @@ void criar_grafo_aleatorio(Grafo*& grafo, bool& direcionado, int& n) {
     uniform_int_distribution<int> dist_peso(peso_min, peso_max);
 
     int arestas_criadas = 0;
+    set<pair<int,int>> arestas;
     while (arestas_criadas < num_arestas) {
         int u = dist_vertice(rng);
         int v = dist_vertice(rng);
-        
+        if(arestas.find({u, v}) != arestas.end()) continue;
         if (u == v) continue;
 
         int p = dist_peso(rng);
         grafo->adicionar_aresta(u, v, p);
+        arestas.insert({u, v});
         if (!direcionado) {
+            arestas.insert({v, u});
             grafo->adicionar_aresta(v, u, p);
         }
         arestas_criadas++;
     }
     cout << "Grafo aleatorio gerado com sucesso!\n";
 }
-
-
-PyObject* iniciar_modulo_python() {
-    Py_Initialize();
-    PyRun_SimpleString("import sys; sys.path.append('.')");
-    
-    PyObject* pName = PyUnicode_FromString("visualizacao");
-    PyObject* pModule = PyImport_Import(pName);
-    Py_DECREF(pName);
-    
-    if (pModule == nullptr) {
-        PyErr_Print();
-        std::cerr << "Falha ao carregar o modulo Python 'visualizacao.py'" << std::endl;
-        return nullptr;
-    }
-    return pModule;
-}
-
-void chamar_plotar_grafo(PyObject* pModule, int n, const std::vector<std::array<int, 3>>& arestas, bool direcionado) {
-    PyObject* pFunc = PyObject_GetAttrString(pModule, "plotar_grafo");
-
-    if (pFunc && PyCallable_Check(pFunc)) {
-        PyObject* pList = PyList_New(arestas.size());
-        for (size_t i = 0; i < arestas.size(); ++i) {
-            PyObject* pEdge = Py_BuildValue("(iii)", arestas[i][0], arestas[i][1], arestas[i][2]);
-            PyList_SetItem(pList, i, pEdge);
-        }
-
-        PyObject* pArgs = PyTuple_Pack(3, PyLong_FromLong(n), pList, direcionado ? Py_True : Py_False);
-        PyObject* pValue = PyObject_CallObject(pFunc, pArgs);
-
-        if (pValue == nullptr) PyErr_Print();
-        
-        Py_XDECREF(pValue);
-        Py_DECREF(pArgs);
-    } else {
-        if (PyErr_Occurred()) PyErr_Print();
-    }
-    Py_XDECREF(pFunc);
-}
-
-void chamar_plotar_arestas(PyObject* pModule, int n, const std::vector<std::array<int, 4>>& arestas_coloridas, bool direcionado) {
-    PyObject* pFunc = PyObject_GetAttrString(pModule, "plotar_grafo_arestas_coloridas");
-
-    if (pFunc && PyCallable_Check(pFunc)) {
-        PyObject* pList = PyList_New(arestas_coloridas.size());
-        for (size_t i = 0; i < arestas_coloridas.size(); ++i) {
-            // Cria tupla (u, v, w, cor)
-            PyObject* pEdge = Py_BuildValue("(iiii)", arestas_coloridas[i][0], arestas_coloridas[i][1], arestas_coloridas[i][2], arestas_coloridas[i][3]);
-            PyList_SetItem(pList, i, pEdge);
-        }
-
-        PyObject* pArgs = PyTuple_Pack(3, PyLong_FromLong(n), pList, direcionado ? Py_True : Py_False);
-        PyObject* pValue = PyObject_CallObject(pFunc, pArgs);
-
-        if (pValue == nullptr) PyErr_Print();
-
-        Py_XDECREF(pValue);
-        Py_DECREF(pArgs);
-    } else {
-         if (PyErr_Occurred()) PyErr_Print();
-    }
-    Py_XDECREF(pFunc);
-}
-
-void chamar_plotar_vertices(PyObject* pModule, int n, const std::vector<int>& cores_vertices, const std::vector<std::array<int, 3>>& arestas, bool direcionado) {
-    PyObject* pFunc = PyObject_GetAttrString(pModule, "plotar_grafo_vertices_coloridos");
-
-    if (pFunc && PyCallable_Check(pFunc)) {
-        PyObject* pColors = PyList_New(cores_vertices.size());
-        for (size_t i = 0; i < cores_vertices.size(); ++i) {
-            PyList_SetItem(pColors, i, PyLong_FromLong(cores_vertices[i]));
-        }
-
-        PyObject* pEdges = PyList_New(arestas.size());
-        for (size_t i = 0; i < arestas.size(); ++i) {
-            PyObject* pEdge = Py_BuildValue("(iii)", arestas[i][0], arestas[i][1], arestas[i][2]);
-            PyList_SetItem(pEdges, i, pEdge);
-        }
-
-        PyObject* pArgs = PyTuple_Pack(4, PyLong_FromLong(n), pColors, pEdges, direcionado ? Py_True : Py_False);
-        PyObject* pValue = PyObject_CallObject(pFunc, pArgs);
-
-        if (pValue == nullptr) PyErr_Print();
-
-        Py_XDECREF(pValue);
-        Py_DECREF(pArgs);
-    } else {
-         if (PyErr_Occurred()) PyErr_Print();
-    }
-    Py_XDECREF(pFunc);
-}
-
-// =============================================================
-// FUNÇÕES AUXILIARES (LÓGICA E TRANSFORMAÇÃO DE DADOS)
-// =============================================================
 
 void visualizar_grafo_geral(Grafo& g, PyObject* pModule, bool direcionado) {
     int n = g.get_tamanho();
@@ -211,6 +119,12 @@ void visualizar_grafo_geral(Grafo& g, PyObject* pModule, bool direcionado) {
 
 void visualizar_caminho_minimo(Grafo& g, PyObject* pModule, int origem, int destino, bool direcionado) {
     pair<int, vector<pair<int, int>>> resultado = g.encontrar_caminho_minimo(origem, destino);
+    if(resultado.first >= 1e9){
+      cout << "Nao existe nenhum caminho entre esses dois vertices\n";
+      return;
+    }
+    cout << "O custo do caminho minimo entre esses vertices e " << resultado.first << "\n";
+    cout << "Desenhando o caminho minimo.\n";
     vector<pair<int, int>> arestas_caminho = resultado.second;
 
     set<pair<int, int>> set_caminho(arestas_caminho.begin(), arestas_caminho.end());
@@ -241,10 +155,9 @@ void visualizar_arvore_geradora(Grafo& g, PyObject* pModule, bool direcionado) {
       return;
     }
     pair<int, vector<array<int,3>>> resultado = g.encontrar_arvore_geradora_minima();
+    cout << "O custo da arvore geradora minima e: " << resultado.first << "\n";
+    cout << "Desenhando a arvore geradora minima\n";
     vector<array<int,3>> mst = resultado.second;
-    cout << "tamanho mst: " << mst.size() << "\n";
-    cout << "custo MST: " << resultado.first << "\n";
-    cout << "arestas da MST:\n";
     for(auto v : resultado.second){
       cout << v[0] << " " << v[1] << " " << v[2] << "\n";
     }
