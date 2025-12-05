@@ -158,9 +158,7 @@ void visualizar_arvore_geradora(Grafo& g, PyObject* pModule, bool direcionado) {
     cout << "O custo da arvore geradora minima e: " << resultado.first << "\n";
     cout << "Desenhando a arvore geradora minima\n";
     vector<array<int,3>> mst = resultado.second;
-    for(auto v : resultado.second){
-      cout << v[0] << " " << v[1] << " " << v[2] << "\n";
-    }
+
     set<pair<int, int>> set_mst;
     for(auto& a : mst) set_mst.insert({a[0], a[1]});
 
