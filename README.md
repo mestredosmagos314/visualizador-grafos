@@ -67,6 +67,7 @@ Basta executar o executável do código em C++ e escolher as opções desejadas 
 ./run_grafo
 ```
 Alguns exemplos de imagens geradas pelo programa:
+
 ![Exemplo de visualização do Dijkstras](docs/exemploDijkstras.png)
 ![Exemplo de visualização do Kosaraju](docs/exemploKosaraju.png)
 ![Exemplo de visualização do Kruskal](docs/exemploKruskal.png)
